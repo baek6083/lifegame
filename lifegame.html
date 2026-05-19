@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Conway's Life Game</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #f0f2f5; }
+        h1 { color: #333; }
+        #controls { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; background-color: #4a90e2; color: white; font-weight: bold; transition: 0.3s; }
+        button:hover { background-color: #357abd; }
+        #board { display: grid; border: 2px solid #333; background-color: #fff; }
+        .cell { width: 15px; height: 15px; border: 0.5px solid #eee; cursor: pointer; }
+        .cell.alive { background-color: #2c3e50; }
+        .footer { margin-top: 30px; font-size: 0.9em; color: #666; border-top: 1px solid #ccc; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>MY Game of Life</h1>
+
+    <div id="controls">
+        <button onclick="nextGeneration()">다음 단계 (Next)</button>
+        <button id="startBtn" onclick="startGame()">시작 (Start)</button>
+        <button id="stopBtn" onclick="stopGame()">정지 (Stop)</button>
+        <button onclick="resetGame()">초기화 (Reset)</button>
+        <button onclick="showIntro()">Intro (이름 표시)</button>
+    </div>
+
+    <div id="board"></div>
+
+    <div class="footer">
+        제작자: [20233024 백건호] | 2026 Life Game Project
+    </div>
+
+    <script>
+        const ROWS = 30;
+        const COLS = 40;
+        let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+        let timer = null;
+
+        const board = document.getElementById('board');
+        board.style.gridTemplateColumns = `repeat(${COLS}, 15px)`;
+
+        // 초기 판 그리기
+        function createBoard() {
+            board.innerHTML = '';
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    if (grid[r][c]) cell.classList.add('alive');
+                    cell.onclick = () => toggleCell(r, c);
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        // Toggle 함수 개선: 배열 데이터 수정과 시각적 업데이트를 동시에 수행
+        function toggleCell(r, c) {
+            grid[r][c] = !grid[r][c];
+            render();
+        }
+
+        function render() {
+            const cells = document.querySelectorAll('.cell');
+            grid.flat().forEach((alive, index) => {
+                if (alive) cells[index].classList.add('alive');
+                else cells[index].classList.remove('alive');
+            });
+        }
+
+        // 다음 세대 산출 로직
+        function nextGeneration() {
+            let nextGrid = grid.map(arr => [...arr]);
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    let neighbors = countNeighbors(r, c);
+                    if (grid[r][c]) {
+                        // 생존 법칙: 이웃이 2~3명이면 생존, 아니면 죽음
+                        if (neighbors < 2 || neighbors > 3) nextGrid[r][c] = false;
+                    } else {
+                        // 탄생 법칙: 이웃이 정확히 3명이면 탄생
+                        if (neighbors === 3) nextGrid[r][c] = true;
+                    }
+                }
+            }
+            grid = nextGrid;
+            render();
+        }
+
+        function countNeighbors(r, c) {
+            let count = 0;
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    if (i === 0 && j === 0) continue;
+                    let nr = r + i, nc = c + j;
+                    if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && grid[nr][nc]) {
+                        count++;
+                    }
+                }
+            }
+            return count;
+        }
+
+        // 시작, 정지, 초기화 기능
+        function startGame() {
+            if (timer) return;
+            timer = setInterval(nextGeneration, 200);
+        }
+
+        function stopGame() {
+            clearInterval(timer);
+            timer = null;
+        }
+
+        function resetGame() {
+            stopGame();
+            grid = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+            render();
+        }
+
+        // Intro 기능: 보드에 텍스트 형태로 이름(예: 'AI') 배치
+        function showIntro() {
+            resetGame();
+            // 'AI' 혹은 본인의 이름을 점(Dot)으로 표현하는 데이터 예시
+            const namePattern = [
+                [5,10], [6,10], [7,10], [8,10], [9,10], [7,11], [7,12], [5,13], [6,13], [7,13], [8,13], [9,13], // A
+                [5,16], [5,17], [5,18], [9,16], [9,17], [9,18], [5,17], [6,17], [7,17], [8,17], [9,17]          // I
+            ];
+            namePattern.forEach(([r, c]) => {
+                grid[r][c] = true;
+            });
+            render();
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>
